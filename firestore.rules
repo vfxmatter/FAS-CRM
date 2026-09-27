@@ -1,0 +1,172 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: /users/{userId}/dailyWork
+// Fields:
+//   - date: string (required, YYYY-MM-DD)
+//   - itemName: string (required, 1-200 chars)
+//   - price: number (required, positive)
+//   - productCost: number (required, positive)
+//   - netProfit: number (required)
+//   - createdAt: string (required, ISO 8601)
+//
+// Collection: /users/{userId}/bookings
+// Fields:
+//   - date: string (required, YYYY-MM-DD)
+//   - clientName: string (required, 1-100 chars)
+//   - contact: string (required, 1-50 chars)
+//   - eventType: string (required, 1-100 chars)
+//   - eventDate: string (required, YYYY-MM-DD)
+//   - cameraPerson: string (optional, 0-100 chars)
+//   - cameraEquipment: string (optional, 0-200 chars)
+//   - createdAt: string (required, ISO 8601)
+//
+// Collection: /users/{userId}/expenses
+// Fields:
+//   - date: string (required, YYYY-MM-DD)
+//   - expenseName: string (required, 1-200 chars)
+//   - cost: number (required, positive)
+//   - split75: number (required)
+//   - split25: number (required)
+//   - createdAt: string (required, ISO 8601)
+//
+// Collection: /users/{userId}/rent
+// Fields:
+//   - date: string (required, YYYY-MM-DD)
+//   - rentAmt: number (required, positive)
+//   - electricityAmt: number (required, positive)
+//   - wifi: number (required, positive)
+//   - waterBottle: number (required, positive)
+//   - total: number (required, positive)
+//   - split75: number (required)
+//   - split25: number (required)
+//   - createdAt: string (required, ISO 8601)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}.*");
+    }
+
+    function isValidISOString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidDailyWork(data) {
+      return hasOnlyAllowedFields(['date', 'itemName', 'price', 'productCost', 'netProfit', 'split75', 'split25', 'createdAt']) &&
+             isValidDateString(data.date) &&
+             data.itemName is string && data.itemName.size() > 0 && data.itemName.size() <= 200 &&
+             data.price is number && data.price >= 0 &&
+             data.productCost is number && data.productCost >= 0 &&
+             data.netProfit is number &&
+             data.split75 is number &&
+             data.split25 is number &&
+             isValidISOString(data.createdAt);
+    }
+
+    function isValidBooking(data) {
+      return hasOnlyAllowedFields(['bookingDate', 'clientName', 'contact', 'email', 'location', 'budgetQuoted', 'advancePayment', 'expenses', 'events', 'createdAt']) &&
+             isValidDateString(data.bookingDate) &&
+             data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
+             data.contact is string && data.contact.size() > 0 && data.contact.size() <= 50 &&
+             (!('email' in data) || data.email == null || data.email == "" || (data.email is string && data.email.size() <= 100)) &&
+             data.location is string && data.location.size() > 0 && data.location.size() <= 500 &&
+             data.budgetQuoted is number && data.budgetQuoted >= 0 &&
+             data.advancePayment is number && data.advancePayment >= 0 &&
+             data.expenses is list &&
+             data.events is list &&
+             isValidISOString(data.createdAt);
+    }
+
+    function isValidExpense(data) {
+      return hasOnlyAllowedFields(['date', 'expenseName', 'cost', 'split75', 'split25', 'createdAt']) &&
+             isValidDateString(data.date) &&
+             data.expenseName is string && data.expenseName.size() > 0 && data.expenseName.size() <= 200 &&
+             data.cost is number && data.cost >= 0 &&
+             data.split75 is number &&
+             data.split25 is number &&
+             isValidISOString(data.createdAt);
+    }
+
+    function isValidRentEntry(data) {
+      return hasOnlyAllowedFields(['date', 'rentAmt', 'electricityAmt', 'wifi', 'waterBottle', 'total', 'split75', 'split25', 'createdAt']) &&
+             isValidDateString(data.date) &&
+             data.rentAmt is number && data.rentAmt >= 0 &&
+             data.electricityAmt is number && data.electricityAmt >= 0 &&
+             data.wifi is number && data.wifi >= 0 &&
+             data.waterBottle is number && data.waterBottle >= 0 &&
+             data.total is number && data.total >= 0 &&
+             data.split75 is number &&
+             data.split25 is number &&
+             isValidISOString(data.createdAt);
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      
+      match /dailyWork/{id} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidDailyWork(request.resource.data);
+        allow update: if isOwner(userId) && isValidDailyWork(request.resource.data) && areImmutableFieldsUnchanged(['createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /bookings/{id} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidBooking(request.resource.data);
+        allow update: if isOwner(userId) && isValidBooking(request.resource.data) && areImmutableFieldsUnchanged(['createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /expenses/{id} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidExpense(request.resource.data);
+        allow update: if isOwner(userId) && isValidExpense(request.resource.data) && areImmutableFieldsUnchanged(['createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /rent/{id} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidRentEntry(request.resource.data);
+        allow update: if isOwner(userId) && isValidRentEntry(request.resource.data) && areImmutableFieldsUnchanged(['createdAt']);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

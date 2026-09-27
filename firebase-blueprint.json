@@ -1,0 +1,205 @@
+{
+  "entities": {
+    "DailyWork": {
+      "title": "Daily Work",
+      "description": "Daily based revenue entry",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "itemName": { "type": "string" },
+        "price": { "type": "number" },
+        "productCost": { "type": "number" },
+        "netProfit": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "itemName", "price", "productCost", "netProfit", "createdAt"]
+    },
+    "StaffEntry": {
+      "title": "Staff Entry",
+      "description": "Staff member and equipment for an event",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "equipment": { "type": "string" }
+      },
+      "required": ["name", "equipment"]
+    },
+    "EventEntry": {
+      "title": "Event Entry",
+      "description": "Specific event within a booking",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "staff": { 
+          "type": "array", 
+          "items": { "$ref": "StaffEntry" } 
+        }
+      },
+      "required": ["name", "date", "startTime", "endTime", "staff"]
+    },
+    "BookingExpense": {
+      "title": "Booking Expense",
+      "description": "Expense related to a specific booking",
+      "type": "object",
+      "properties": {
+        "item": { "type": "string" },
+        "amount": { "type": "number" }
+      },
+      "required": ["item", "amount"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "New type of booking with multiple events and financials",
+      "type": "object",
+      "properties": {
+        "bookingDate": { "type": "string", "format": "date" },
+        "clientName": { "type": "string" },
+        "contact": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "location": { "type": "string" },
+        "budgetQuoted": { "type": "number" },
+        "advancePayment": { "type": "number" },
+        "expenses": { 
+          "type": "array", 
+          "items": { "$ref": "BookingExpense" } 
+        },
+        "events": { 
+          "type": "array", 
+          "items": { "$ref": "EventEntry" } 
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["bookingDate", "clientName", "contact", "location", "budgetQuoted", "advancePayment", "expenses", "events", "createdAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Business expense",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "expenseName": { "type": "string" },
+        "cost": { "type": "number" },
+        "split75": { "type": "number" },
+        "split25": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "expenseName", "cost", "split75", "split25", "createdAt"]
+    },
+    "RentEntry": {
+      "title": "Rent Entry",
+      "description": "Monthly rent and utility entry",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "rentAmt": { "type": "number" },
+        "electricityAmt": { "type": "number" },
+        "wifi": { "type": "number" },
+        "waterBottle": { "type": "number" },
+        "total": { "type": "number" },
+        "split75": { "type": "number" },
+        "split25": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "rentAmt", "total", "split75", "split25", "createdAt"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "A client who has booked or is booking services",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the client" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "notes": { "type": "string", "description": "Additional notes about the client" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["name", "email", "createdAt"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "A potential client inquiry",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the lead" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "source": { "type": "string", "description": "Where the lead came from" },
+        "status": { "type": "string", "enum": ["New", "Contacted", "Qualified", "Lost"], "description": "Current status of the lead" },
+        "notes": { "type": "string", "description": "Notes about the inquiry" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["name", "email", "status", "createdAt"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "A photography or videography event",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string", "description": "Reference to the client" },
+        "clientName": { "type": "string", "description": "Denormalized client name" },
+        "title": { "type": "string", "description": "Event title" },
+        "date": { "type": "string", "format": "date", "description": "Event date" },
+        "location": { "type": "string", "description": "Event location" },
+        "type": { "type": "string", "enum": ["Wedding", "Corporate", "Portrait", "Event", "Other"], "description": "Type of event" },
+        "status": { "type": "string", "enum": ["Booked", "Shot", "Post-Production", "Delivered"], "description": "Current status of the event" },
+        "price": { "type": "number", "description": "Package price" },
+        "notes": { "type": "string", "description": "Event specific notes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["clientId", "title", "date", "status", "price", "createdAt"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Billing for an event",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "description": "Reference to the event" },
+        "clientId": { "type": "string", "description": "Reference to the client" },
+        "clientName": { "type": "string", "description": "Denormalized client name" },
+        "eventTitle": { "type": "string", "description": "Denormalized event title" },
+        "amount": { "type": "number", "description": "Invoice amount" },
+        "dueDate": { "type": "string", "format": "date", "description": "Payment due date" },
+        "status": { "type": "string", "enum": ["Draft", "Sent", "Paid", "Overdue"], "description": "Current status of the invoice" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["eventId", "clientId", "amount", "dueDate", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/dailyWork/{id}": {
+      "schema": "DailyWork",
+      "description": "User's daily work entries"
+    },
+    "/users/{userId}/bookings/{id}": {
+      "schema": "Booking",
+      "description": "User's bookings"
+    },
+    "/users/{userId}/expenses/{id}": {
+      "schema": "Expense",
+      "description": "User's expenses"
+    },
+    "/users/{userId}/rent/{id}": {
+      "schema": "RentEntry",
+      "description": "User's rent entries"
+    },
+    "/users/{userId}/clients/{clientId}": {
+      "schema": "Client",
+      "description": "User's clients"
+    },
+    "/users/{userId}/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "User's leads"
+    },
+    "/users/{userId}/events/{eventId}": {
+      "schema": "Event",
+      "description": "User's events"
+    },
+    "/users/{userId}/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "User's invoices"
+    }
+  }
+}
